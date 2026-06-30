@@ -23,7 +23,14 @@ class User {
         return await UserModel.findOne({ $or: [{ email: email }, { username: email }] }).lean();
     }
     static async findById(id) {
-        return await UserModel.findOne({ id: Number(id) }).lean();
+        let user;
+        if (!isNaN(id)) {
+            user = await UserModel.findOne({ id: Number(id) }).lean();
+        }
+        if (!user && mongoose.isValidObjectId(id)) {
+            user = await UserModel.findById(id).lean();
+        }
+        return user;
     }
     static async getAll() {
         return await UserModel.find().sort({ created_at: -1 }).lean();

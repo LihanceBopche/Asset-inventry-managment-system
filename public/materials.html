@@ -44,9 +44,12 @@
     <div class="dashboard-layout">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
+            <button class="sidebar-close-btn" onclick="document.getElementById('sidebar').classList.remove('active')"><i
+                    class="fas fa-times"></i></button>
             <h2>IT ASSET PRO</h2>
             <nav style="flex: 1;">
                 <a href="dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="analytics.html" class="nav-item"><i class="fas fa-brain"></i> Data Analysis</a>
                 <a href="inventory.html" class="nav-item"><i class="fas fa-laptop-code"></i> Asset Inventory</a>
                 <a href="materials.html" class="nav-item active"><i class="fas fa-boxes-stacked"></i> Material Stock</a>
                 <a href="logs.html" class="nav-item"><i class="fas fa-file-invoice"></i> Issuance Logs</a>
@@ -66,6 +69,9 @@
             <!-- Top Nav -->
             <nav class="top-nav">
                 <div class="logo-section">
+                    <button class="mobile-toggle-btn"
+                        onclick="document.getElementById('sidebar').classList.add('active')"><i
+                            class="fas fa-bars"></i></button>
                     <img src="assets/logo.png" alt="TASL">
                     <h2>INVENTORY HUB</h2>
                 </div>

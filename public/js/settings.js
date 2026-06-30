@@ -15,7 +15,8 @@ socket.on('user_updated', fetchUsers);
 socket.on('entity_updated', () => { fetchDepts(); fetchEmps(); });
 
 // UI Setup
-if (user.role !== 'Admin') {
+const isAdmin = user.role && user.role.toLowerCase() === 'admin';
+if (!isAdmin) {
     document.querySelectorAll('.admin-only, #adminActions, #adminStats').forEach(el => el.style.display = 'none');
 }
 
@@ -47,10 +48,10 @@ function showToast(msg, type) {
 function switchTab(tab) {
     document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    
+
     document.getElementById(`${tab}Section`).style.display = 'block';
     event.currentTarget.classList.add('active');
-    
+
     if (tab === 'users') fetchUsers();
     if (tab === 'departments') fetchDepts();
     if (tab === 'employees') fetchEmps();
@@ -59,7 +60,11 @@ function switchTab(tab) {
 // --- USER MANAGEMENT ---
 async function fetchUsers() {
     try {
-        const res = await fetch('/api/auth/users', { headers: { 'Authorization': `Bearer ${token}` }});
+        const res = await fetch('/api/auth/users', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) {
+            if (res.status === 401) logout();
+            throw new Error('API Response not ok');
+        }
         allUsers = await res.json();
         renderUsers(allUsers);
     } catch (err) { showToast('Error loading users', 'error'); }
@@ -68,16 +73,16 @@ async function fetchUsers() {
 function renderUsers(users) {
     const tbody = document.getElementById('userTableBody');
     tbody.innerHTML = '';
-    
+
     // Update Stats
     const total = users.length;
-    const admins = users.filter(u => u.role === 'Admin').length;
-    const managers = users.filter(u => u.role === 'Manager').length;
-    
+    const admins = users.filter(u => u.role && u.role.toLowerCase() === 'admin').length;
+    const managers = users.filter(u => u.role && u.role.toLowerCase() === 'manager').length;
+
     const totalEl = document.getElementById('totalUsers');
     const adminEl = document.getElementById('adminCount');
     const managerEl = document.getElementById('managerCount');
-    
+
     if (totalEl) totalEl.textContent = total;
     if (adminEl) adminEl.textContent = admins;
     if (managerEl) managerEl.textContent = managers;
@@ -101,7 +106,11 @@ function renderUsers(users) {
 // --- DEPARTMENT MANAGEMENT ---
 async function fetchDepts() {
     try {
-        const res = await fetch('/api/entities/departments', { headers: { 'Authorization': `Bearer ${token}` }});
+        const res = await fetch('/api/entities/departments', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) {
+            if (res.status === 401) logout();
+            throw new Error('API Error');
+        }
         allDepts = await res.json();
         renderDepts(allDepts);
     } catch (err) { showToast('Error loading departments', 'error'); }
@@ -127,7 +136,11 @@ function renderDepts(depts) {
 // --- EMPLOYEE MANAGEMENT ---
 async function fetchEmps() {
     try {
-        const res = await fetch('/api/entities/employees', { headers: { 'Authorization': `Bearer ${token}` }});
+        const res = await fetch('/api/entities/employees', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) {
+            if (res.status === 401) logout();
+            throw new Error('API Error');
+        }
         allEmps = await res.json();
         renderEmps(allEmps);
     } catch (err) { showToast('Error loading employees', 'error'); }
@@ -172,7 +185,7 @@ document.getElementById('deptForm').addEventListener('submit', async (e) => {
     const data = Object.fromEntries(new FormData(e.target));
     const url = id ? `/api/entities/departments/${id}` : '/api/entities/departments';
     const method = id ? 'PUT' : 'POST';
-    
+
     const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -188,7 +201,7 @@ document.getElementById('empForm').addEventListener('submit', async (e) => {
     const data = Object.fromEntries(new FormData(e.target));
     const url = id ? `/api/entities/employees/${id}` : '/api/entities/employees';
     const method = id ? 'PUT' : 'POST';
-    
+
     const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -207,7 +220,7 @@ function editDept(id, name) {
 
 async function deleteDept(id) {
     if (confirm('Delete department?')) {
-        await fetch(`/api/entities/departments/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+        await fetch(`/api/entities/departments/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
         fetchDepts();
     }
 }
@@ -223,13 +236,13 @@ function editEmp(id, name, eid, did) {
 
 async function deleteEmp(id) {
     if (confirm('Delete employee?')) {
-        await fetch(`/api/entities/employees/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+        await fetch(`/api/entities/employees/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
         fetchEmps();
     }
 }
 
 async function loadDeptSelect(selectedId = null) {
-    const res = await fetch('/api/entities/departments', { headers: { 'Authorization': `Bearer ${token}` }});
+    const res = await fetch('/api/entities/departments', { headers: { 'Authorization': `Bearer ${token}` } });
     const depts = await res.json();
     const select = document.getElementById('empDeptSelect');
     select.innerHTML = '<option value="">-- Select Department --</option>';
@@ -250,10 +263,10 @@ async function changeRole(id, currentRole) {
 
 async function deleteUser(id) {
     if (confirm('Delete user?')) {
-        await fetch(`/api/auth/users/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+        await fetch(`/api/auth/users/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
         fetchUsers();
     }
 }
 
 // Initial Load
-if (user.role === 'Admin') fetchUsers();
+if (isAdmin) fetchUsers();

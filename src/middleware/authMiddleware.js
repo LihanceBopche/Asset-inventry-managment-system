@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-exports.protect = (req, res, next) => {
+exports.protect = async (req, res, next) => {
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
@@ -12,7 +13,11 @@ exports.protect = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
+        const dbUser = await User.findById(decoded.id);
+        if (!dbUser) {
+            return res.status(401).json({ message: 'The user belonging to this token no longer exists.' });
+        }
+        req.user = dbUser;
         next();
     } catch (error) {
         return res.status(401).json({ message: 'Token is not valid' });
@@ -21,7 +26,10 @@ exports.protect = (req, res, next) => {
 
 exports.authorize = (...roles) => {
     return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
+        const allowedRoles = roles.map(r => r.toLowerCase());
+        const userRole = (req.user.role || '').toLowerCase();
+        if (!allowedRoles.includes(userRole)) {
+            console.error(`403 FORBIDDEN: UserRole='${userRole}', Allowed='${allowedRoles}'`);
             return res.status(403).json({ message: `Role ${req.user.role} is not authorized` });
         }
         next();

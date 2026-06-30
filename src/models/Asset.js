@@ -5,16 +5,25 @@ const assetSchema = new mongoose.Schema({
     pc_name: String,
     serial_no: String,
     model_name: String,
-    asset_type: String,
-    department: String,
+    asset_type: String, // Legacy fallback
     work_location: String,
     ram: String,
     storage: String,
     os: String,
     mac_address: String,
-    status: String,
-    remarks: String
-}, { strict: false });
+    remarks: String,
+
+    // New Data-Driven Fields
+    assetTag: { type: String, unique: true, sparse: true },
+    assetType: { type: String, enum: ['Laptop', 'Server', 'Monitor', 'Desktop', 'Accessory', 'Other', 'Workstation'] },
+    brand: String,
+    purchasePrice: { type: Number, default: 0 },
+    purchaseDate: { type: Date },
+    warrantyPeriod: { type: Number, default: 12 },
+    department: { type: String },
+    status: { type: String, enum: ['Active', 'In-Store', 'In-Repair', 'Repair', 'Scrap', 'Allocated', 'Idle'] },
+    condition: { type: String, enum: ['Functional', 'Degraded', 'Non-Functional'] }
+}, { strict: false, timestamps: true });
 
 const AssetModel = mongoose.models['assets'] || mongoose.model('assets', assetSchema, 'assets');
 
@@ -42,6 +51,11 @@ class Asset {
     static async delete(id) {
         await AssetModel.deleteOne({ id: Number(id) });
         return true;
+    }
+
+    // New method for analytics
+    static getModel() {
+        return AssetModel;
     }
 }
 

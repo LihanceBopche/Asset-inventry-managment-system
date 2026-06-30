@@ -32,6 +32,7 @@ app.use('/api/assets', require('./routes/assetRoutes'));
 app.use('/api/materials', require('./routes/materialRoutes'));
 app.use('/api/entities', require('./routes/entityRoutes'));
 app.use('/api/locations', require('./routes/locationRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
 
 // Basic Route
 app.get('/api/health', (req, res) => {

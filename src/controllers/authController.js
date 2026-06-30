@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 exports.register = async (req, res) => {
     try {
         const { username, email, password, role } = req.body;
-        
+
         if (!username || !email || !password) {
             return res.status(400).json({ message: 'Please provide all required fields' });
         }
@@ -16,7 +16,7 @@ exports.register = async (req, res) => {
         }
 
         const userId = await User.create({ username, email, password, role });
-        
+
         // Real-time update
         const io = req.app.get('io');
         if (io) {
@@ -48,15 +48,16 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
+        const userId = user.id || user._id;
         const token = jwt.sign(
-            { id: user.id, role: user.role },
+            { id: userId, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: '8h' }
         );
 
         res.json({
             token,
-            user: { id: user.id, username: user.username, email: user.email, role: user.role }
+            user: { id: userId, username: user.username, email: user.email, role: user.role }
         });
     } catch (error) {
         console.error('Login Error:', error);
@@ -77,7 +78,7 @@ exports.updateUserRole = async (req, res) => {
     try {
         const { role } = req.body;
         await User.updateRole(req.params.id, role);
-        
+
         const io = req.app.get('io');
         if (io) io.emit('user_updated');
 
@@ -94,7 +95,7 @@ exports.deleteUser = async (req, res) => {
             return res.status(400).json({ message: 'Cannot delete your own account' });
         }
         await User.delete(req.params.id);
-        
+
         const io = req.app.get('io');
         if (io) io.emit('user_updated');
 
